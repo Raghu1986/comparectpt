@@ -1,8 +1,6 @@
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
 from app.agents.insurance_agent import (
-    DEFAULT_EXTRACTION_PROMPT,
-    DEFAULT_MERGE_PROMPT,
     InsuranceComparisonResponse,
     InsuranceLLMClient,
     LLMConfig,
@@ -11,6 +9,7 @@ from app.agents.insurance_agent import (
     LLMProvider,
     PdfExtractionError,
     extract_pdf_text,
+    get_insurance_prompts,
     run_insurance_comparison,
 )
 from app.core.config import get_settings
@@ -171,18 +170,6 @@ async def compare_insurance_documents(
         default=None,
         description="Optional model override. Example: `claude-haiku-4-5` or `gpt-5`.",
     ),
-    current_prompt: str = Form(
-        default=DEFAULT_EXTRACTION_PROMPT,
-        description="Prompt used for the current-term document extraction.",
-    ),
-    prior_prompt: str = Form(
-        default=DEFAULT_EXTRACTION_PROMPT,
-        description="Prompt used for the prior-term document extraction.",
-    ),
-    merge_prompt: str = Form(
-        default=DEFAULT_MERGE_PROMPT,
-        description="Prompt used to merge both extraction JSON payloads.",
-    ),
     temperature: float = Form(default=0.0, description="Sampling temperature, usually `0.0` for extraction."),
 ):
     _ensure_pdf(current_term_pdf)
@@ -222,9 +209,6 @@ async def compare_insurance_documents(
         result = await run_insurance_comparison(
             current_document=current_document,
             prior_document=prior_document,
-            current_prompt=current_prompt,
-            prior_prompt=prior_prompt,
-            merge_prompt=merge_prompt,
             llm_config=llm_config,
             llm_client=llm_client,
         )
@@ -244,11 +228,7 @@ async def compare_insurance_documents(
     description="Returns the default extraction and merge prompts used by the insurance comparison flow.",
 )
 async def get_default_prompts():
-    return {
-        "current_prompt": DEFAULT_EXTRACTION_PROMPT,
-        "prior_prompt": DEFAULT_EXTRACTION_PROMPT,
-        "merge_prompt": DEFAULT_MERGE_PROMPT,
-    }
+    return get_insurance_prompts()
 
 
 def _ensure_pdf(upload: UploadFile) -> None:

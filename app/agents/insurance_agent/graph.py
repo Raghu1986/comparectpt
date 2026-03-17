@@ -15,6 +15,7 @@ from app.agents.insurance_agent.nodes import (
     build_merge_node,
     build_prior_prompt_node,
 )
+from app.agents.insurance_agent.prompts import get_insurance_prompts
 
 
 def build_insurance_graph(llm_client: InsuranceLLMClient):
@@ -39,12 +40,14 @@ async def run_insurance_comparison(
     *,
     current_document: InsuranceDocumentInput,
     prior_document: InsuranceDocumentInput,
-    current_prompt: str,
-    prior_prompt: str,
-    merge_prompt: str,
     llm_config: LLMConfig,
     llm_client: InsuranceLLMClient,
 ) -> InsuranceComparisonResponse:
+    prompts = get_insurance_prompts()
+    current_prompt = prompts["current_prompt"]
+    prior_prompt = prompts["prior_prompt"]
+    merge_prompt = prompts["merge_prompt"]
+
     app = build_insurance_graph(llm_client)
     final_state = await app.ainvoke(
         {

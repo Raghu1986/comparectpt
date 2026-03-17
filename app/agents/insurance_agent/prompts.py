@@ -91,3 +91,11 @@ Comparison rules:
 - For insurance company names, treat formatting-only differences as unchanged.
 - For insurance company names, treat a short form or alias as unchanged when it clearly refers to the same company as the full legal name.
 - Only mark insurance company names as changed when the company is actually different, not when one document uses uppercase, punctuation differences, or a shortened version of the same name."""
+
+
+def get_insurance_prompts() -> dict[str, str]:
+    return {
+        "current_prompt": DEFAULT_EXTRACTION_PROMPT,
+        "prior_prompt": DEFAULT_EXTRACTION_PROMPT,
+        "merge_prompt": DEFAULT_MERGE_PROMPT,
+    }
