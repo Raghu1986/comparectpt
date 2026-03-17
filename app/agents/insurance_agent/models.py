@@ -68,6 +68,12 @@ class NamedInsuredAddressMatch(BaseModel):
     page: int
 
 
+class PremiumMatch(BaseModel):
+    line_of_business: str | None = None
+    value: str
+    page: int
+
+
 class InsuranceExtractionResult(BaseModel):
     policy_numbers: list[PolicyNumberMatch] = Field(default_factory=list)
     policy_periods: list[PolicyPeriodMatch] = Field(default_factory=list)
@@ -80,12 +86,25 @@ class FieldLevelChange(BaseModel):
     field: str
     current_value: str | None = None
     prior_value: str | None = None
+    current_page: int | None = None
+    prior_page: int | None = None
     change_type: Literal["added", "removed", "changed", "unchanged"]
 
 
 class InsuranceMergeResult(BaseModel):
     current_term: InsuranceExtractionResult
     prior_term: InsuranceExtractionResult
+    comparison_summary: list[str] = Field(default_factory=list)
+    field_level_changes: list[FieldLevelChange] = Field(default_factory=list)
+
+
+class PremiumExtractionResult(BaseModel):
+    premiums: list[PremiumMatch] = Field(default_factory=list)
+
+
+class PremiumMergeResult(BaseModel):
+    current_term: PremiumExtractionResult
+    prior_term: PremiumExtractionResult
     comparison_summary: list[str] = Field(default_factory=list)
     field_level_changes: list[FieldLevelChange] = Field(default_factory=list)
 

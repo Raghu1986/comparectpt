@@ -82,7 +82,7 @@ COMPARE_RESPONSE_EXAMPLE = {
     },
     "merged_output": {
         "prompt": "Merge both extraction JSON payloads.",
-        "response": '{"current_term":{"policy_numbers":[{"value":"CPP1234567-89","page":2}],"policy_periods":[{"from":"01/01/2025","to":"01/01/2026","page":2}],"insurance_companies":[{"value":"Sample Insurance Company","page":1}],"named_insured_and_mailing_addresses":[{"named_insured":"Acme LLC","mailing_address":"123 Main St, Dallas, TX 75001","page":3}],"notes":[]},"prior_term":{"policy_numbers":[{"value":"CPP1234567-88","page":2}],"policy_periods":[{"from":"01/01/2024","to":"01/01/2025","page":2}],"insurance_companies":[{"value":"Sample Insurance Company","page":1}],"named_insured_and_mailing_addresses":[{"named_insured":"Acme LLC","mailing_address":"123 Main St, Dallas, TX 75001","page":3}],"notes":[]},"comparison_summary":["Policy number changed between terms."],"field_level_changes":[{"field":"policy_numbers[0]","current_value":"CPP1234567-89 (page 2)","prior_value":"CPP1234567-88 (page 2)","change_type":"changed"}]}',
+        "response": '{"current_term":{"policy_numbers":[{"value":"CPP1234567-89","page":2}],"policy_periods":[{"from":"01/01/2025","to":"01/01/2026","page":2}],"insurance_companies":[{"value":"Sample Insurance Company","page":1}],"named_insured_and_mailing_addresses":[{"named_insured":"Acme LLC","mailing_address":"123 Main St, Dallas, TX 75001","page":3}],"notes":[]},"prior_term":{"policy_numbers":[{"value":"CPP1234567-88","page":2}],"policy_periods":[{"from":"01/01/2024","to":"01/01/2025","page":2}],"insurance_companies":[{"value":"Sample Insurance Company","page":1}],"named_insured_and_mailing_addresses":[{"named_insured":"Acme LLC","mailing_address":"123 Main St, Dallas, TX 75001","page":3}],"notes":[]},"comparison_summary":["Policy number changed between terms.","Premium TP1 changed from $59,649.00 to $56,818.00"],"field_level_changes":[{"field":"policy_numbers[0]","current_value":"CPP1234567-89","prior_value":"CPP1234567-88","current_page":2,"prior_page":2,"change_type":"changed"},{"field":"Premium(TP1)","current_value":"$56,818.00","prior_value":"$59,649.00","current_page":12,"prior_page":12,"change_type":"changed"}]}',
         "structured_output": {
             "current_term": {
                 "policy_numbers": [{"value": "CPP1234567-89", "page": 2}],
@@ -110,12 +110,25 @@ COMPARE_RESPONSE_EXAMPLE = {
                 ],
                 "notes": [],
             },
-            "comparison_summary": ["Policy number changed between terms."],
+            "comparison_summary": [
+                "Policy number changed between terms.",
+                "Premium TP1 changed from $59,649.00 to $56,818.00",
+            ],
             "field_level_changes": [
                 {
                     "field": "policy_numbers[0]",
-                    "current_value": "CPP1234567-89 (page 2)",
-                    "prior_value": "CPP1234567-88 (page 2)",
+                    "current_value": "CPP1234567-89",
+                    "prior_value": "CPP1234567-88",
+                    "current_page": 2,
+                    "prior_page": 2,
+                    "change_type": "changed",
+                },
+                {
+                    "field": "Premium(TP1)",
+                    "current_value": "$56,818.00",
+                    "prior_value": "$59,649.00",
+                    "current_page": 12,
+                    "prior_page": 12,
                     "change_type": "changed",
                 }
             ],

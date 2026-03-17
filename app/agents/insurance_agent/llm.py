@@ -1,6 +1,8 @@
 import json
 import re
+from collections.abc import Callable
 from base64 import b64encode
+from typing import Any
 
 from anthropic import APIError as AnthropicAPIError
 from anthropic import AsyncAnthropic
@@ -8,7 +10,16 @@ from openai import APIError as OpenAIAPIError
 from openai import AsyncOpenAI, BadRequestError
 from pydantic import ValidationError
 
-from app.agents.insurance_agent.models import InsuranceDocumentInput, InsuranceExtractionResult, InsuranceMergeResult, LLMConfig, LLMModel, LLMProvider
+from app.agents.insurance_agent.models import (
+    InsuranceDocumentInput,
+    InsuranceExtractionResult,
+    InsuranceMergeResult,
+    LLMConfig,
+    LLMModel,
+    LLMProvider,
+    PremiumExtractionResult,
+    PremiumMergeResult,
+)
 from app.core.config import Settings
 
 
@@ -45,7 +56,32 @@ class InsuranceLLMClient:
         if provider == LLMProvider.OPENAI:
             return await self._generate_with_openai(model=model, prompt=prompt, document=document, temperature=config.temperature)
         if provider == LLMProvider.ANTHROPIC:
-            return await self._generate_with_anthropic(model=model, prompt=prompt, document=document, temperature=config.temperature)
+            return await self._generate_with_anthropic(
+                model=model,
+                prompt=prompt,
+                document=document,
+                temperature=config.temperature,
+                chunk_parser=self.parse_extraction,
+                chunk_merger=self._merge_extraction_results,
+            )
+
+        raise LLMInvocationError(f"Unsupported provider: {config.provider.value}")
+
+    async def generate_premium_json(self, *, prompt: str, document: InsuranceDocumentInput | str, config: LLMConfig) -> str:
+        provider = config.provider
+        model = self.resolve_model(config)
+
+        if provider == LLMProvider.OPENAI:
+            return await self._generate_with_openai(model=model, prompt=prompt, document=document, temperature=config.temperature)
+        if provider == LLMProvider.ANTHROPIC:
+            return await self._generate_with_anthropic(
+                model=model,
+                prompt=prompt,
+                document=document,
+                temperature=config.temperature,
+                chunk_parser=self.parse_premium_extraction,
+                chunk_merger=self._merge_premium_extraction_results,
+            )
 
         raise LLMInvocationError(f"Unsupported provider: {config.provider.value}")
 
@@ -61,6 +97,20 @@ class InsuranceLLMClient:
         except (ValidationError, json.JSONDecodeError) as exc:
             raise LLMInvocationError(f"Merge response was not valid page-aware JSON: {exc}") from exc
         return self._normalize_merge_result(result)
+
+    def parse_premium_extraction(self, response_text: str) -> PremiumExtractionResult:
+        try:
+            payload = self._normalize_premium_extraction_payload(self._load_json(response_text))
+            return PremiumExtractionResult.model_validate(payload)
+        except (ValidationError, json.JSONDecodeError, TypeError) as exc:
+            raise LLMInvocationError(f"Premium extraction response was not valid JSON: {exc}") from exc
+
+    def parse_premium_merge(self, response_text: str) -> PremiumMergeResult:
+        try:
+            result = PremiumMergeResult.model_validate(self._load_json(response_text))
+        except (ValidationError, json.JSONDecodeError) as exc:
+            raise LLMInvocationError(f"Premium merge response was not valid JSON: {exc}") from exc
+        return result
 
     def resolve_model(self, config: LLMConfig) -> LLMModel:
         return config.model or DEFAULT_MODEL_BY_PROVIDER[config.provider]
@@ -86,7 +136,16 @@ class InsuranceLLMClient:
 
         return response.output_text.strip()
 
-    async def _generate_with_anthropic(self, *, model: LLMModel, prompt: str, document: InsuranceDocumentInput | str, temperature: float) -> str:
+    async def _generate_with_anthropic(
+        self,
+        *,
+        model: LLMModel,
+        prompt: str,
+        document: InsuranceDocumentInput | str,
+        temperature: float,
+        chunk_parser: Callable[[str], Any],
+        chunk_merger: Callable[[list[Any]], Any],
+    ) -> str:
         if not self._anthropic_client:
             raise LLMInvocationError("ANTHROPIC_API_KEY is not configured.")
 
@@ -106,6 +165,8 @@ class InsuranceLLMClient:
                     prompt=prompt,
                     document=document,
                     temperature=temperature,
+                    chunk_parser=chunk_parser,
+                    chunk_merger=chunk_merger,
                 )
             raise LLMInvocationError(f"Anthropic request failed: {exc}") from exc
 
@@ -116,13 +177,15 @@ class InsuranceLLMClient:
         prompt: str,
         document: InsuranceDocumentInput,
         temperature: float,
+        chunk_parser: Callable[[str], Any],
+        chunk_merger: Callable[[list[Any]], Any],
     ) -> str:
         if not document.pages:
             raise LLMInvocationError(
                 "Anthropic fallback needs extracted page text, but none was available for this document."
             )
 
-        chunk_results: list[InsuranceExtractionResult] = []
+        chunk_results: list[Any] = []
         for chunk_text in self._build_page_chunks(document, max_chars=ANTHROPIC_MAX_DOCUMENT_CHARS):
             try:
                 response = await self._anthropic_client.messages.create(
@@ -135,9 +198,9 @@ class InsuranceLLMClient:
             except AnthropicAPIError as exc:
                 raise LLMInvocationError(f"Anthropic request failed during chunked fallback: {exc}") from exc
 
-            chunk_results.append(self.parse_extraction(self._extract_anthropic_text(response).strip()))
+            chunk_results.append(chunk_parser(self._extract_anthropic_text(response).strip()))
 
-        merged = self._merge_extraction_results(chunk_results)
+        merged = chunk_merger(chunk_results)
         return merged.model_dump_json(by_alias=True)
 
     @staticmethod
@@ -256,6 +319,46 @@ class InsuranceLLMClient:
             ],
             notes=[note for result in results for note in result.notes],
         )
+
+    @staticmethod
+    def _merge_premium_extraction_results(results: list[PremiumExtractionResult]) -> PremiumExtractionResult:
+        return PremiumExtractionResult(
+            premiums=[item for result in results for item in result.premiums],
+        )
+
+    @staticmethod
+    def _normalize_premium_extraction_payload(payload: Any) -> dict[str, Any]:
+        if isinstance(payload, list):
+            items = payload
+        elif isinstance(payload, dict) and "premiums" in payload:
+            items = payload["premiums"]
+        elif isinstance(payload, dict):
+            items = [payload]
+        else:
+            raise TypeError("Premium extraction payload must be a JSON object or array.")
+
+        premiums: list[dict[str, Any]] = []
+        for item in items:
+            if not isinstance(item, dict):
+                raise TypeError("Each premium extraction item must be a JSON object.")
+
+            value = item.get("Premium(TP1)")
+            if value is None:
+                value = item.get("value")
+            if value is None:
+                continue
+            if str(value).strip().lower() == "not found":
+                continue
+
+            premiums.append(
+                {
+                    "line_of_business": item.get("line_of_business"),
+                    "value": value,
+                    "page": item.get("pagenumber", item.get("page")),
+                }
+            )
+
+        return {"premiums": premiums}
 
     def _normalize_merge_result(self, result: InsuranceMergeResult) -> InsuranceMergeResult:
         normalized_changes = []
