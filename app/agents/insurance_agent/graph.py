@@ -1,5 +1,3 @@
-from typing import TypedDict
-
 from langgraph.graph import END, START, StateGraph
 
 from app.agents.insurance_agent.llm import InsuranceLLMClient
@@ -8,70 +6,21 @@ from app.agents.insurance_agent.models import (
     ExtractionExecution,
     InsuranceComparisonResponse,
     InsuranceDocumentInput,
-    InsuranceExtractionResult,
-    InsuranceMergeResult,
     LLMConfig,
     MergeExecution,
 )
-
-
-class InsuranceGraphState(TypedDict, total=False):
-    current_document: InsuranceDocumentInput
-    prior_document: InsuranceDocumentInput
-    current_prompt: str
-    prior_prompt: str
-    merge_prompt: str
-    llm_config: LLMConfig
-    current_response: str
-    prior_response: str
-    merged_response: str
-    current_structured: InsuranceExtractionResult
-    prior_structured: InsuranceExtractionResult
-    merged_structured: InsuranceMergeResult
-
-
-async def _run_current_prompt(state: InsuranceGraphState, llm_client: InsuranceLLMClient) -> InsuranceGraphState:
-    response = await llm_client.generate_json(
-        prompt=state["current_prompt"],
-        document=state["current_document"],
-        config=state["llm_config"],
-    )
-    return {"current_response": response, "current_structured": llm_client.parse_extraction(response)}
-
-
-async def _run_prior_prompt(state: InsuranceGraphState, llm_client: InsuranceLLMClient) -> InsuranceGraphState:
-    response = await llm_client.generate_json(
-        prompt=state["prior_prompt"],
-        document=state["prior_document"],
-        config=state["llm_config"],
-    )
-    return {"prior_response": response, "prior_structured": llm_client.parse_extraction(response)}
-
-
-async def _merge_responses(state: InsuranceGraphState, llm_client: InsuranceLLMClient) -> InsuranceGraphState:
-    merged_input = (
-        "Current term extraction JSON:\n"
-        f"{state['current_response']}\n\n"
-        "Prior term extraction JSON:\n"
-        f"{state['prior_response']}"
-    )
-    response = await llm_client.generate_json(
-        prompt=state["merge_prompt"],
-        document=merged_input,
-        config=state["llm_config"],
-    )
-    return {"merged_response": response, "merged_structured": llm_client.parse_merge(response)}
+from app.agents.insurance_agent.nodes import (
+    InsuranceGraphState,
+    build_current_prompt_node,
+    build_merge_node,
+    build_prior_prompt_node,
+)
 
 
 def build_insurance_graph(llm_client: InsuranceLLMClient):
-    async def current_prompt_node(state: InsuranceGraphState) -> InsuranceGraphState:
-        return await _run_current_prompt(state, llm_client)
-
-    async def prior_prompt_node(state: InsuranceGraphState) -> InsuranceGraphState:
-        return await _run_prior_prompt(state, llm_client)
-
-    async def merge_node(state: InsuranceGraphState) -> InsuranceGraphState:
-        return await _merge_responses(state, llm_client)
+    current_prompt_node = build_current_prompt_node(llm_client)
+    prior_prompt_node = build_prior_prompt_node(llm_client)
+    merge_node = build_merge_node(llm_client)
 
     graph = StateGraph(InsuranceGraphState)
     graph.add_node("current_prompt", current_prompt_node)
