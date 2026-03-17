@@ -88,6 +88,7 @@ class FieldLevelChange(BaseModel):
     prior_value: str | None = None
     current_page: int | None = None
     prior_page: int | None = None
+    observation: str | None = None
     change_type: Literal["added", "removed", "changed", "unchanged"]
 
 

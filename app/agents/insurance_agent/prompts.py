@@ -82,6 +82,7 @@ Compare both extractions and return valid JSON only, with no markdown fences and
       \"prior_value\": string | null,
       \"current_page\": int | null,
       \"prior_page\": int | null,
+      \"observation\": string | null,
       \"change_type\": \"added\" | \"removed\" | \"changed\" | \"unchanged\"
     }
   ]
@@ -89,6 +90,8 @@ Compare both extractions and return valid JSON only, with no markdown fences and
 Preserve all page numbers exactly as provided in the source extraction JSON.
 
 For each item in `field_level_changes`, include `current_page` and `prior_page` whenever page numbers are available.
+Also include an `observation` string summarizing the compared source content in a format such as:
+`Current term content(s): <value> Prior term content(s): <value>`
 
 Comparison rules:
 - Compare string values case-insensitively unless case itself is materially meaningful.
@@ -174,6 +177,7 @@ Compare both premium extraction outputs and return valid JSON only, with no mark
       "prior_value": string | null,
       "current_page": int | null,
       "prior_page": int | null,
+      "observation": string | null,
       "change_type": "added" | "removed" | "changed" | "unchanged"
     }
   ]
@@ -188,6 +192,8 @@ Rules:
 - If line_of_business is missing, compare by premium position as a fallback.
 - Use a field name like "Premium(TP1)" when there is a single premium value without a better business label.
 - Include `current_page` and `prior_page` in every `field_level_changes` item whenever available.
+- Include an `observation` string for every `field_level_changes` item, for example:
+  `Current term content(s): $4,000.00 Prior term content(s): $4,000.00`
 - Write comparison summaries in business language such as:
   "Premium TP1 remains unchanged at $4,000.00 on page 4"
   "Premium TP1 changed from $3,500.00 to $4,000.00"
