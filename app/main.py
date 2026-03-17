@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from guard.middleware import SecurityMiddleware
 from guard.models import SecurityConfig
 
@@ -12,7 +14,7 @@ from app.middleware.request_id import RequestContextMiddleware
 
 configure_logging()
 settings = get_settings()
-
+UI_PATH = Path(__file__).parent / "ui" / "index.html"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +43,9 @@ app.add_middleware(
 app.include_router(sample.router)
 app.include_router(insurance.router)
 
+@app.get("/", include_in_schema=False)
+async def index():
+    return FileResponse(UI_PATH)
 
 @app.get("/health")
 async def health():

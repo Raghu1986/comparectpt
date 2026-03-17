@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insurance Compare Workspace</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --bg-deep: #e5ddd1;
+      --panel: rgba(255, 252, 247, 0.82);
+      --panel-strong: #fffaf3;
+      --line: rgba(62, 77, 77, 0.14);
+      --text: #203233;
+      --muted: #617272;
+      --accent: #0d6f6d;
+      --accent-soft: rgba(13, 111, 109, 0.12);
+      --warn: #a9582b;
+      --warn-soft: rgba(169, 88, 43, 0.12);
+      --ok: #2c7451;
+      --ok-soft: rgba(44, 116, 81, 0.12);
+      --shadow: 0 24px 60px rgba(39, 42, 48, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Aptos", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(13, 111, 109, 0.12), transparent 34%),
+        radial-gradient(circle at top right, rgba(169, 88, 43, 0.14), transparent 28%),
+        linear-gradient(135deg, var(--bg), #f8f5ef 46%, var(--bg-deep));
+    }
+
+    .shell {
+      width: min(1440px, calc(100% - 32px));
+      margin: 24px auto;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .sidebar,
+    .main-panel,
+    .surface,
+    .result-card,
+    .change-card {
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(23, 56, 58, 0.92), rgba(20, 43, 46, 0.96));
+      color: #ecf5f3;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: calc(100vh - 48px);
+      position: sticky;
+      top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(236, 245, 243, 0.74);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #74d5b4, #d8ab7b);
+      box-shadow: 0 0 20px rgba(116, 213, 180, 0.5);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-size: 2.6rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-copy {
+      margin: 0;
+      color: rgba(236, 245, 243, 0.76);
+      line-height: 1.6;
+      font-size: 0.98rem;
+    }
+
+    .sidebar-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .sidebar-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-card strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-card p,
+    .sidebar-card li {
+      margin: 0;
+      color: rgba(236, 245, 243, 0.72);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .sidebar-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .surface {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .hero h1 {
+      margin: 10px 0 12px;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-size: clamp(2.1rem, 4vw, 3.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .hero-pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 0.92rem;
+    }
+
+    .composer {
+      padding: 24px 28px 28px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .section-head h2 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .upload-card {
+      position: relative;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 248, 239, 0.94));
+      border: 1px solid rgba(82, 94, 94, 0.14);
+      overflow: hidden;
+    }
+
+    .upload-card input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-card-content {
+      min-height: 216px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .upload-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .upload-kicker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .upload-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    .upload-desc {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .file-meta {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(13, 111, 109, 0.08);
+      border: 1px solid rgba(13, 111, 109, 0.12);
+      min-height: 84px;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+      transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+    }
+
+    .file-meta strong {
+      font-size: 0.98rem;
+    }
+
+    .file-meta span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .upload-card:hover .file-meta,
+    .upload-card:focus-within .file-meta,
+    .upload-card.has-file .file-meta {
+      background: rgba(13, 111, 109, 0.14);
+      border-color: rgba(13, 111, 109, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .primary-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      background: linear-gradient(135deg, #0d6f6d, #194a59);
+      color: #f9fffe;
+      font-weight: 600;
+      font-size: 0.96rem;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: 0 16px 32px rgba(13, 111, 109, 0.22);
+      transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 40px rgba(13, 111, 109, 0.28);
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .results {
+      display: grid;
+      gap: 18px;
+      padding: 24px 28px 28px;
+    }
+
+    .status-banner {
+      border-radius: 18px;
+      padding: 16px 18px;
+      border: 1px solid transparent;
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    .status-idle {
+      background: rgba(255, 255, 255, 0.62);
+      border-color: var(--line);
+      color: var(--muted);
+    }
+
+    .status-loading {
+      background: rgba(13, 111, 109, 0.1);
+      border-color: rgba(13, 111, 109, 0.16);
+      color: var(--accent);
+    }
+
+    .status-error {
+      background: rgba(169, 88, 43, 0.1);
+      border-color: rgba(169, 88, 43, 0.18);
+      color: var(--warn);
+    }
+
+    .meta-grid,
+    .change-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .meta-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .result-card,
+    .change-card {
+      background: var(--panel-strong);
+      border: 1px solid rgba(72, 84, 84, 0.12);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 18px 38px rgba(40, 45, 48, 0.08);
+    }
+
+    .result-card {
+      padding: 20px;
+    }
+
+    .result-label {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .result-title {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    .result-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(72, 84, 84, 0.08);
+    }
+
+    .result-row:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .result-row dt {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .result-row dd {
+      margin: 0;
+      text-align: right;
+      font-size: 0.96rem;
+      font-weight: 600;
+      max-width: 65%;
+      word-break: break-word;
+    }
+
+    .summary-card {
+      padding: 22px;
+    }
+
+    .summary-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-item {
+      display: grid;
+      grid-template-columns: 16px 1fr;
+      gap: 12px;
+      align-items: start;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .summary-item::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #0d6f6d, #d99a62);
+    }
+
+    .change-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .change-card {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .change-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .change-top h3 {
+      margin: 0;
+      font-size: 1.06rem;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-unchanged {
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .badge-changed {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .change-block {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(72, 84, 84, 0.08);
+      background: rgba(244, 239, 231, 0.54);
+      display: grid;
+      gap: 6px;
+    }
+
+    .change-block small,
+    .observation small {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+    }
+
+    .change-block strong {
+      font-size: 1rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .pages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .page-pill {
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(13, 111, 109, 0.08);
+      border: 1px solid rgba(13, 111, 109, 0.12);
+    }
+
+    .observation {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(72, 84, 84, 0.08);
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .empty-state {
+      padding: 22px;
+      border-radius: 18px;
+      border: 1px dashed rgba(72, 84, 84, 0.18);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.48);
+    }
+
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+        position: static;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .hero,
+      .section-head,
+      .action-row,
+      .result-row,
+      .change-top {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .file-grid,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-row dd {
+        max-width: 100%;
+        text-align: left;
+      }
+
+      .hero-pill {
+        width: fit-content;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div>
+        <div class="eyebrow">Insurance Review Console</div>
+        <h1 class="brand-title">Policy Compare</h1>
+        <p class="brand-copy">
+          Upload current-term and prior-term policy PDFs to generate a structured comparison
+          summary, page-aware field changes, and premium continuity insights in one review surface.
+        </p>
+      </div>
+
+      <div class="sidebar-grid">
+        <section class="sidebar-card">
+          <strong>Review Focus</strong>
+          <p>Designed for renewal analysis, QA handoff, and underwriter review without leaving the browser.</p>
+        </section>
+
+        <section class="sidebar-card">
+          <strong>What You’ll See</strong>
+          <ul>
+            <li>Document-level metadata for current and prior terms</li>
+            <li>Comparison summary highlights from merged extraction output</li>
+            <li>Field-by-field changes with page references and observations</li>
+          </ul>
+        </section>
+
+        <section class="sidebar-card">
+          <strong>Recommended Input</strong>
+          <p>Use source PDFs directly from the policy package so extracted values and page references stay consistent.</p>
+        </section>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <section class="surface hero">
+        <div>
+          <div class="eyebrow" style="color: var(--muted);">Document Intelligence</div>
+          <h1>Compare current and prior insurance terms with a cleaner review workflow.</h1>
+          <p>
+            This workspace posts both files to the backend comparison API, then renders the merged
+            response as an executive summary plus detailed field-level evidence for fast decision-making.
+          </p>
+        </div>
+        <div class="hero-pill" id="heroStatus">Ready for upload</div>
+      </section>
+
+      <section class="surface composer">
+        <div class="section-head">
+          <div>
+            <h2>Upload Policy PDFs</h2>
+            <p>Select one current-term PDF and one prior-term PDF, then run the comparison.</p>
+          </div>
+        </div>
+
+        <div class="file-grid">
+          <label class="upload-card" id="currentUploadCard">
+            <input id="currentFile" type="file" accept="application/pdf" />
+            <div class="upload-card-content">
+              <div>
+                <div class="upload-kicker">Current term</div>
+                <h3 class="upload-title">Current Term Policy</h3>
+                <p class="upload-desc">Upload the CT PDF used as the active renewal document.</p>
+              </div>
+              <div class="file-meta" id="currentFileMeta">
+                <strong>No file selected</strong>
+                <span>Choose the current-term insurance PDF.</span>
+              </div>
+            </div>
+          </label>
+
+          <label class="upload-card" id="priorUploadCard">
+            <input id="priorFile" type="file" accept="application/pdf" />
+            <div class="upload-card-content">
+              <div>
+                <div class="upload-kicker">Prior term</div>
+                <h3 class="upload-title">Prior Term Policy</h3>
+                <p class="upload-desc">Upload the PT PDF used as the comparison baseline.</p>
+              </div>
+              <div class="file-meta" id="priorFileMeta">
+                <strong>No file selected</strong>
+                <span>Choose the prior-term insurance PDF.</span>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <div class="hint">
+            The request will be sent to <code>/insurance/compare</code> using multipart form data.
+          </div>
+          <button class="primary-btn" id="compareButton" type="button">Run Comparison</button>
+        </div>
+      </section>
+
+      <section class="surface results">
+        <div class="status-banner status-idle" id="statusBanner">
+          Upload both policy PDFs to begin the insurance comparison.
+        </div>
+
+        <div id="resultsContent">
+          <div class="empty-state">
+            The merged response will appear here with summary insights, document metadata, and
+            field-level changes including page numbers and observations.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const currentInput = document.getElementById("currentFile");
+    const priorInput = document.getElementById("priorFile");
+    const currentMeta = document.getElementById("currentFileMeta");
+    const priorMeta = document.getElementById("priorFileMeta");
+    const currentCard = document.getElementById("currentUploadCard");
+    const priorCard = document.getElementById("priorUploadCard");
+    const compareButton = document.getElementById("compareButton");
+    const statusBanner = document.getElementById("statusBanner");
+    const resultsContent = document.getElementById("resultsContent");
+    const heroStatus = document.getElementById("heroStatus");
+
+    function formatFileSize(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return "Size unavailable";
+      const units = ["B", "KB", "MB", "GB"];
+      let size = bytes;
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+      }
+      return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    function updateFileMeta(input, metaEl, cardEl, label) {
+      const file = input.files?.[0];
+      if (!file) {
+        metaEl.innerHTML = `<strong>No file selected</strong><span>Choose the ${label} insurance PDF.</span>`;
+        cardEl.classList.remove("has-file");
+        return;
+      }
+
+      metaEl.innerHTML = `<strong>${file.name}</strong><span>${formatFileSize(file.size)} • PDF ready for upload</span>`;
+      cardEl.classList.add("has-file");
+    }
+
+    function setStatus(type, message) {
+      statusBanner.className = `status-banner ${type}`;
+      statusBanner.textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatValue(value) {
+      if (value === null || value === undefined || value === "") return "Not available";
+      if (Array.isArray(value)) return value.join(", ");
+      if (typeof value === "object") return JSON.stringify(value);
+      return String(value);
+    }
+
+    function formatPage(value) {
+      return value === null || value === undefined ? "N/A" : `Page ${value}`;
+    }
+
+    function createDocumentCard(label, documentData, responseMeta) {
+      const fileName = documentData?.filename ?? documentData?.file_name ?? "Unavailable";
+      const pageCount = documentData?.page_count ?? "N/A";
+      const provider = responseMeta?.provider ?? documentData?.provider ?? "N/A";
+      const model = responseMeta?.model ?? documentData?.model ?? "Default";
+
+      return `
+        <article class="result-card">
+          <p class="result-label">${escapeHtml(label)}</p>
+          <h3 class="result-title">${escapeHtml(fileName)}</h3>
+          <dl class="result-list">
+            <div class="result-row">
+              <dt>Pages</dt>
+              <dd>${escapeHtml(pageCount)}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Provider</dt>
+              <dd>${escapeHtml(provider)}</dd>
+            </div>
+            <div class="result-row">
+              <dt>Model</dt>
+              <dd>${escapeHtml(model)}</dd>
+            </div>
+          </dl>
+        </article>
+      `;
+    }
+
+    function renderSummary(summaryItems) {
+      if (!Array.isArray(summaryItems) || summaryItems.length === 0) {
+        return `
+          <section class="result-card summary-card">
+            <p class="result-label">Comparison Summary</p>
+            <h3 class="result-title">No summary returned</h3>
+          </section>
+        `;
+      }
+
+      const items = summaryItems
+        .map((item) => `<li class="summary-item">${escapeHtml(item)}</li>`)
+        .join("");
+
+      return `
+        <section class="result-card summary-card">
+          <p class="result-label">Comparison Summary</p>
+          <h3 class="result-title">Merged policy insights</h3>
+          <ul class="summary-list">${items}</ul>
+        </section>
+      `;
+    }
+
+    function renderFieldChanges(changes) {
+      if (!Array.isArray(changes) || changes.length === 0) {
+        return `
+          <div class="empty-state">
+            No field-level changes were returned in the merged output.
+          </div>
+        `;
+      }
+
+      return `
+        <div class="change-grid">
+          ${changes.map((change) => {
+            const badgeClass = change.change_type === "changed" ? "badge-changed" : "badge-unchanged";
+            return `
+              <article class="change-card">
+                <div class="change-top">
+                  <h3>${escapeHtml(change.field ?? "Unknown field")}</h3>
+                  <span class="badge ${badgeClass}">${escapeHtml(change.change_type ?? "unknown")}</span>
+                </div>
+
+                <div class="change-block">
+                  <small>Current term</small>
+                  <strong>${escapeHtml(formatValue(change.current_value))}</strong>
+                </div>
+
+                <div class="change-block">
+                  <small>Prior term</small>
+                  <strong>${escapeHtml(formatValue(change.prior_value))}</strong>
+                </div>
+
+                <div class="pages">
+                  <span class="page-pill">Current: ${escapeHtml(formatPage(change.current_page))}</span>
+                  <span class="page-pill">Prior: ${escapeHtml(formatPage(change.prior_page))}</span>
+                </div>
+
+                <div class="observation">
+                  <small>Observation</small>
+                  <div>${escapeHtml(formatValue(change.observation))}</div>
+                </div>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderResults(payload) {
+      const merged = payload?.merged_output?.structured_output ?? {};
+      const summary = merged.comparison_summary ?? [];
+      const changes = merged.field_level_changes ?? [];
+      const responseMeta = {
+        provider: payload?.provider,
+        model: payload?.model,
+      };
+
+      resultsContent.innerHTML = `
+        <section class="meta-grid">
+          ${createDocumentCard("Current document", payload?.current_document, responseMeta)}
+          ${createDocumentCard("Prior document", payload?.prior_document, responseMeta)}
+        </section>
+
+        ${renderSummary(summary)}
+
+        <section>
+          <p class="result-label" style="margin-bottom: 12px;">Field Level Changes</p>
+          ${renderFieldChanges(changes)}
+        </section>
+      `;
+    }
+
+    async function runComparison() {
+      const currentFile = currentInput.files?.[0];
+      const priorFile = priorInput.files?.[0];
+
+      if (!currentFile || !priorFile) {
+        setStatus("status-error", "Both current-term and prior-term PDFs are required.");
+        heroStatus.textContent = "Missing files";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("current_term_pdf", currentFile);
+      formData.append("prior_term_pdf", priorFile);
+      formData.append("provider", "anthropic");
+      formData.append("model", "claude-haiku-4-5");
+      formData.append("temperature", "0");
+
+      compareButton.disabled = true;
+      compareButton.textContent = "Comparing...";
+      heroStatus.textContent = "Analysis in progress";
+      setStatus("status-loading", "Submitting both policy PDFs for extraction and merged comparison...");
+      resultsContent.innerHTML = `
+        <div class="empty-state">
+          The backend is processing both documents. This can take a moment for larger PDF packages.
+        </div>
+      `;
+
+      try {
+        const response = await fetch("/insurance/compare", {
+          method: "POST",
+          body: formData,
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        const payload = contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
+
+        if (!response.ok) {
+          const message = typeof payload === "string"
+            ? payload
+            : payload?.detail || payload?.message || "The comparison request failed.";
+          throw new Error(message);
+        }
+
+        renderResults(payload);
+        setStatus("status-idle", "Comparison completed successfully. Review the summary and field-level evidence below.");
+        heroStatus.textContent = "Comparison complete";
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unexpected error while calling the compare API.";
+        setStatus("status-error", message);
+        heroStatus.textContent = "Request failed";
+        resultsContent.innerHTML = `
+          <div class="empty-state">
+            Unable to render comparison results. ${escapeHtml(message)}
+          </div>
+        `;
+      } finally {
+        compareButton.disabled = false;
+        compareButton.textContent = "Run Comparison";
+      }
+    }
+
+    currentInput.addEventListener("change", () => updateFileMeta(currentInput, currentMeta, currentCard, "current-term"));
+    priorInput.addEventListener("change", () => updateFileMeta(priorInput, priorMeta, priorCard, "prior-term"));
+    compareButton.addEventListener("click", runComparison);
+  </script>
+</body>
+</html>
