@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from guard.middleware import SecurityMiddleware
 from guard.models import SecurityConfig
 
@@ -15,6 +16,8 @@ from app.middleware.request_id import RequestContextMiddleware
 configure_logging()
 settings = get_settings()
 UI_PATH = Path(__file__).parent / "ui" / "index.html"
+
+origins = ["*"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +41,20 @@ app.add_middleware(
         redis_prefix="guard:security:",
         enable_penetration_detection=False,
     ),
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type", "Authorization", "X-Api-Key", "X-Amz-Security-Token",
+        "X-Amz-Date", "User_email", "X-Content-Type-Options",
+        "Strict-Transport-Security", "X-Frame-Options",
+        "X-XSS-Protection", "X-Tenant",
+    ],
 )
 
 app.include_router(sample.router)
