@@ -26,11 +26,26 @@ class Settings(BaseSettings):
     TENANT_RATE_LIMIT_PER_MINUTE: int = 120
     IP_RATE_LIMIT_PER_MINUTE: int = 300  # Per IP
 
-    ENTRA_TENANT_ID: str
-    ENTRA_AUDIENCE: str
+    AUTH_PROVIDER: str = "entra"
+
+    ENTRA_TENANT_ID: str | None = None
+    ENTRA_AUDIENCE: str | None = None
+
+    COGNITO_REGION: str | None = None
+    COGNITO_USER_POOL_ID: str | None = None
+    COGNITO_USER_CLIENT_ID: str | None = None
+    COGNITO_M2M_CLIENT_ID: str | None = None
+    COGNITO_M2M_REQUIRED_SCOPES: str = ""  # Comma-separated list of required scopes for M2M tokens, e.g. "scope1,scope2"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    @property
+    def cognito_m2m_required_scopes(self) -> set[str]:
+        return {
+            scope.strip()
+            for scope in self.COGNITO_M2M_REQUIRED_SCOPES.split(",")
+            if scope.strip()
+        }
 
 @lru_cache
 def get_settings() -> Settings:

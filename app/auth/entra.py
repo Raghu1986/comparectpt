@@ -65,7 +65,15 @@ class EntraAuthProvider(AuthProvider):
                 status_code=403,
                 detail="User token required",
             )
-        return payload
+        return {
+            "auth_type": "user",
+            "provider": "entra",
+            "subject": payload.get("oid") or payload.get("sub"),
+            "email": payload.get("preferred_username") or payload.get("email"),
+            "username": payload.get("preferred_username"),
+            "scopes": payload.get("scp", "").split(),
+            "claims": payload,
+        }
 
     async def validate_app(self, payload):
         if "roles" not in payload:
@@ -73,4 +81,10 @@ class EntraAuthProvider(AuthProvider):
                 status_code=403,
                 detail="Client credential token required",
             )
-        return payload
+        return {
+            "auth_type": "app",
+            "provider": "entra",
+            "client_id": payload.get("appid") or payload.get("azp"),
+            "scopes": payload.get("roles", []),
+            "claims": payload,
+        }

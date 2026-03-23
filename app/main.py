@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Multi-Tenant SaaS (100 Tenants Ready)",
+    title="Compare Insurance DOCS",
     lifespan=lifespan,
 )
 

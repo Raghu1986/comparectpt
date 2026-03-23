@@ -24,11 +24,19 @@ async def combined_read(
 @router.get("/user/profile")
 async def profile(user=Depends(require_user)):
     return {
-        "user_id": user["oid"],
-        "email": user.get("preferred_username"),
+        "provider": user["provider"],
+        "user_id": user["subject"],
+        "email": user.get("email"),
+        "username": user.get("username"),
+        "scopes": user.get("scopes", []),
     }
 
 
 @router.get("/internal/sync")
 async def sync(app=Depends(require_app)):
-    return {"status": "internal access granted"}
+    return {
+        "status": "internal access granted",
+        "provider": app["provider"],
+        "client_id": app.get("client_id"),
+        "scopes": app.get("scopes", []),
+    }
